@@ -53,16 +53,54 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     {
         $options = Typecho_Widget::widget('Widget_Options');
         $enabled = $options->plugin('ADrawLottery')->ADrawLottery_enabled;
+        $slug = Typecho_Widget::widget('Widget_Archive')->slug; // 获取文章slug
+        
 
-        if ($enabled == '1') {
-            $slug = Typecho_Widget::widget('Widget_Archive')->slug; // 获取文章slug
-            if (!empty($slug) && self::hasADrawLotteryTag()) {
-                // 如果存在抽奖标签且满足其他条件，则在页面底部显示抽奖倒计时
-                self::showCountdown();
+    if ($enabled == '1') {
+        if (!empty($slug) && self::hasADrawLotteryTag()) {
+            // 读取中奖信息
+            $winner = self::readWinnerFromLog($slug);
+
+            if ($winner) {
+                // 直接输出中奖信息
+                self::outputWinner($winner);
+            } else {
+                // 显示倒计时
+                self::showCountdown($slug);
             }
         }
     }
+    }
+    
 
+
+
+
+    
+    
+    private static function readWinnerFromLog($slug)
+{
+    $file = __DIR__ . '/ADrawLottery_log.txt';
+    if (file_exists($file)) {
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $data = explode('##', $line);
+            if ($data[0] == $slug) {
+                return array(
+                    'author' => $data[1],
+                    'avatar' => $data[2],
+                    'content' => $data[3]
+                );
+            }
+        }
+    }
+    return false;
+}
+
+    
+    
+    
+    
     public static function showCountdown()
     {
         $class = Typecho_Widget::widget('Widget_Archive');
@@ -106,17 +144,31 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
 
         return false;
     }
-
-
-
+    
+    
+    private static function outputWinner($winner)
+{
+    echo '<div class="draw-lottery">';
+    echo '<p>恭喜中奖！</p>';
+    echo '<p>中奖人：' . $winner['author'] . '</p>';
+    echo '<p>中奖人头像：<img src="' . $winner['avatar'] . '" alt="' . $winner['author'] . '"></p>';
+    echo '<p>中奖评论：' . $winner['content'] . '</p>';
+    echo '</div>';
+}
+    
+    
+    
+    
+    
     private static function doADrawLottery()
     {
         $options = Typecho_Widget::widget('Widget_Options');
         $bloggerEmail = $options->plugin('ADrawLottery')->ADrawLottery_blogger_email;
 
         // 获取文章的所有评论并按评论时间从早到晚排序
+        $cid = Typecho_Widget::widget('Widget_Archive')->cid;
         $db = Typecho_Db::get();
-        $slug = Typecho_Widget::widget('Widget_Archive')->parameter->slug;
+        $slug = Typecho_Widget::widget('Widget_Archive')->slug;
         $page = $db->fetchRow($db->select()->from('table.contents')
             ->where('table.contents.status = ?', 'publish')
             ->where('table.contents.slug = ?', $slug));
@@ -124,7 +176,8 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
             ->where('table.comments.status = ?', 'approved')
             ->where('table.comments.created < ?', self::getBeijingTime())
             ->where('table.comments.type = ?', 'comment')
-            // ->where('table.comments.cid <> ?', $page['authorId'])
+            ->where('table.comments.cid <> ?', $page['authorId'])
+            ->where('table.comments.cid = ?', $cid)
             ->order('table.comments.created', Typecho_Db::SORT_ASC));
 
         // 过滤博主评论
@@ -150,6 +203,17 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
             echo '<p>中奖人头像：<img src="' . $avatar . '" alt="' . $author . '"></p>';
             echo '<p>中奖评论：' . $content . '</p>';
             echo '</div>';
+            
+            
+            // 将中奖信息写入文件
+            $data = $slug . '##' . $author . '##' . $avatar . '##' . $content . PHP_EOL;
+            $file = __DIR__ . '/ADrawLottery_log.txt';
+            file_put_contents($file, $data, FILE_APPEND | LOCK_EX);
+            
+            
         }
+        
+        
+        
     }
 }
