@@ -44,7 +44,7 @@ function themeFields($layout) {
 ### 更新日志
 
 2023-08-06更新说明：
-* ADrawLottery 1.0版本已完成
+* ADrawLottery 1.0.2 版本已完成
 * 修改beta版倒计时显示逻辑
 * 修复beta版抽取其他文章评论的bug
 * 修复beta版中重复执行抽奖和无法储存抽奖数据的bug
