@@ -73,29 +73,26 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     }
     
 
-
-
-
     
     
     private static function readWinnerFromLog($slug)
-{
-    $file = __DIR__ . '/ADrawLottery_log.txt';
-    if (file_exists($file)) {
-        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            $data = explode('##', $line);
-            if ($data[0] == $slug) {
-                return array(
-                    'author' => $data[1],
-                    'avatar' => $data[2],
-                    'content' => $data[3]
-                );
+    {
+        $file = __DIR__ . '/ADrawLottery_log.txt';
+        if (file_exists($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $data = explode('##', $line);
+                if ($data[0] == $slug) {
+                    return array(
+                        'author' => $data[1],
+                        'avatar' => $data[2],
+                        'content' => $data[3]
+                    );
+                }
             }
         }
+        return false;
     }
-    return false;
-}
 
     
     
@@ -112,12 +109,22 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
 
         // 计算倒计时剩余分钟数
         $countdown = $drawTime - $currentTime;
-        $countdownMinutes = ceil($countdown / 60);
+        // 计算剩余天数、小时数和分钟数
+        $days = floor($countdown / (60 * 60 * 24));
+        $hours = floor(($countdown - $days * 60 * 60 * 24) / (60 * 60));
+        $minutes = ceil(($countdown - $days * 60 * 60 * 24 - $hours * 60 * 60) / 60);
 
         // 显示倒计时
         echo '<div style="border: 1px solid #ccc; padding: 10px; background-color: #f2f2f2;">';
-        echo '<p style="font-size: 18px;">距离抽奖结束还有 ' . $countdownMinutes . ' 分钟</p>';
+        if ($days > 0) {
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $days . '天 ' . $hours . '小时 ' . $minutes . '分钟</p>';
+        } elseif ($hours > 0) {
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $hours . '小时 ' . $minutes . '分钟</p>';
+        } else {
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $minutes . '分钟</p>';
+        }
         echo '</div>';
+        
          // 判断是否到达抽奖执行时间
         if ($countdown <= 0) {
             // 倒计时结束，执行抽奖逻辑并显示中奖人名称、头像和评论内容
@@ -147,14 +154,14 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     
     
     private static function outputWinner($winner)
-{
-    echo '<div class="draw-lottery">';
-    echo '<p>恭喜中奖！</p>';
-    echo '<p>中奖人：' . $winner['author'] . '</p>';
-    echo '<p>中奖人头像：<img src="' . $winner['avatar'] . '" alt="' . $winner['author'] . '"></p>';
-    echo '<p>中奖评论：' . $winner['content'] . '</p>';
-    echo '</div>';
-}
+    {
+         echo '<div class="draw-lottery">';
+         echo '<p>恭喜中奖！</p>';
+         echo '<p>中奖人：' . $winner['author'] . '</p>';
+         echo '<p>中奖人头像：<img src="' . $winner['avatar'] . '" alt="' . $winner['author'] . '"></p>';
+         echo '<p>中奖评论：' . $winner['content'] . '</p>';
+         echo '</div>';
+    }
     
     
     
@@ -196,6 +203,7 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
         if ($winner) {
             $author = $winner['author'];
             $avatar = Typecho_Common::gravatarUrl($winner['mail'], 80, 'X', 'mm', Typecho_Widget::widget('Widget_Options')->siteUrl);
+
             $content = $winner['text'];
             echo '<div class="draw-lottery">';
             echo '<p>恭喜中奖！</p>';
