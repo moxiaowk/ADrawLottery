@@ -43,6 +43,10 @@ function themeFields($layout) {
 
 ### 更新日志
 
+
+2023-08-07更新说明：
+* 将原先倒计时和中奖模块在footer里显示的方法修复为在文章标签上显示（目前只会在文章开头显示）
+
 2023-08-06更新说明：
 * ADrawLottery 1.0.2 版本已完成
 * 修改beta版倒计时显示逻辑
@@ -51,4 +55,4 @@ function themeFields($layout) {
 
 ### 感谢 Thanks
 
-- [即刻学术](https://www.ijkxs.com "部分技术支持")
+- [即刻学术](https://www.ijkxs.com "技术支持")
