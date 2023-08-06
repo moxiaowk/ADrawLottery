@@ -3,18 +3,19 @@
  * Typecho抽奖插件
  * @package ADrawLottery
  * @author 柠宇
- * @version 1.0.0
+ * @version 1.0.2
  * @link https://sau.cc/
  */
 
 class ADrawLottery_Plugin implements Typecho_Plugin_Interface
 {
     public static $authorName = '柠宇'; // 作者名称
-    public static $authorBlog = 'https://sau.cc/'; // 作者博客链接
+    public static $authorBlog = 'https://i.sau.cc/'; // 作者博客链接
 
     public static function activate()
     {
-        Typecho_Plugin::factory('Widget_Archive')->footer = array(__CLASS__, 'footer');
+     Typecho_Plugin::factory('Widget_Abstract_Contents')->contentEx = array(__CLASS__, 'addCountdownToContent');
+        
     }
 
     public static function deactivate()
@@ -48,30 +49,50 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     public static function render()
     {
     }
+    
 
-    public static function footer()
-    {
-        $options = Typecho_Widget::widget('Widget_Options');
-        $enabled = $options->plugin('ADrawLottery')->ADrawLottery_enabled;
-        $slug = Typecho_Widget::widget('Widget_Archive')->slug; // 获取文章slug
-        
+public static function addCountdownToContent($content, $widget, $lastResult)
+{
+    $options = Typecho_Widget::widget('Widget_Options');
+    $enabled = $options->plugin('ADrawLottery')->ADrawLottery_enabled;
+    $slug = $widget->slug; // 获取文章slug
+
+    // 如果 $lastResult 不为空，则表示之前已经添加过倒计时或中奖信息，直接返回原始内容
+    if (!empty($lastResult)) {
+        return $content;
+    }
 
     if ($enabled == '1') {
-        if (!empty($slug) && self::hasADrawLotteryTag()) {
+        // 使用正则表达式匹配 <!--ADrawLottery start--> 和 <!--ADrawLottery end--> 标签之间的内容
+        preg_match('/<!--ADrawLottery start-->(.*?)<!--ADrawLottery end-->/s', $content, $matches);
+
+        if (isset($matches[1])) {
+            $drawLotteryContent = $matches[1];
             // 读取中奖信息
             $winner = self::readWinnerFromLog($slug);
 
             if ($winner) {
-                // 直接输出中奖信息
-                self::outputWinner($winner);
+                // 输出中奖信息
+                $drawLotteryContent .= self::outputWinner($winner);
             } else {
                 // 显示倒计时
-                self::showCountdown($slug);
+                $drawLotteryContent .= self::showCountdown($slug);
             }
+
+            // 替换原来的标签内容为新的内容（包括倒计时或中奖信息）
+            $content = str_replace($matches[0], $drawLotteryContent, $content);
         }
     }
-    }
+
+    return $content;
+}
+
+
+
+
+
     
+
 
     
     
@@ -139,18 +160,16 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
         return time();
     }
 
-    private static function hasADrawLotteryTag()
+    private static function hasADrawLotteryTag($content)
     {
-        // 获取当前文章内容
-        $content = Typecho_Widget::widget('Widget_Archive')->content;
-
-        // 检查文章内容是否含有抽奖标签
-        if (strpos($content, '<!--ADrawLottery start-->') !== false) {
-            return true;
-        }
-
-        return false;
+    // 检查文章内容是否含有抽奖标签
+    if (strpos($content, '<!--ADrawLottery start-->') !== false) {
+        return true;
     }
+
+    return false;
+    }
+
     
     
     private static function outputWinner($winner)
