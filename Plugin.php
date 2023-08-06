@@ -3,7 +3,7 @@
  * Typecho抽奖插件
  * @package ADrawLottery
  * @author 柠宇
- * @version 1.0.2
+ * @version 1.0.3
  * @link https://sau.cc/
  */
 
