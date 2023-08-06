@@ -5,7 +5,7 @@
 
 1.将插件上传到**/usr/plugins/，并重命名为**ADrawLottery**，请保证该目录有读写权限。
 
-2.修改functions.php，在合适的位置加入挂载点以添加自定义字段
+2.修改主题目录里的functions.php，在合适的位置加入挂载点以添加自定义字段
 ```php
 function themeFields($layout) {
     $drawEnabled = new Typecho_Widget_Helper_Form_Element_Radio(
