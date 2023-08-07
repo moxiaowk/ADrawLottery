@@ -84,10 +84,6 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     }
     
     
-    
-    
-    
-    
     private static function readWinnerFromLog($slug)
     {
         $file = __DIR__ . '/ADrawLottery_log.txt';
@@ -186,9 +182,6 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     }
     
     
-    
-    
-    
     private static function doADrawLottery()
     {
         
@@ -209,7 +202,7 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
             ->where('table.comments.status = ?', 'approved')
             ->where('table.comments.created < ?', self::getBeijingTime())
             ->where('table.comments.type = ?', 'comment')
-            ->where('table.comments.cid = ?', $cid) // 修改这一行
+            ->where('table.comments.cid = ?', $cid)
             ->order('table.comments.created', Typecho_Db::SORT_ASC));
 
         
@@ -243,12 +236,6 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
         $file = __DIR__ . '/ADrawLottery_log.txt';
         file_put_contents($file, $data, FILE_APPEND | LOCK_EX);
             
-            
         }
-        
-
-        
-        
-        
     }
 }
