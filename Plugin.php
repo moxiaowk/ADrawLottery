@@ -140,11 +140,11 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
         // 显示倒计时
         echo '<div style="border: 1px solid #ccc; padding: 10px; background-color: #f2f2f2;">';
         if ($days > 0) {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $days . '天 ' . $hours . '小时 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $days . '天 ' . $hours . '小时 ' . $minutes . '分钟 </p>';
         } elseif ($hours > 0) {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $hours . '小时 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $hours . '小时 ' . $minutes . '分钟 </p>';
         } elseif ($minutes > 0) {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $minutes . '分钟 </p>';
         } else {
             echo '<p style="font-size: 18px;">距离抽奖还有 ' . $seconds . '秒</p>';
         }
