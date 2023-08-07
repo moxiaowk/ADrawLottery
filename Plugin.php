@@ -51,17 +51,13 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
     }
     
 
-public static function addCountdownToContent($content, $widget, $lastResult)
-{
+    public static function addCountdownToContent($content, $widget, $lastResult)
+    {
     $options = Typecho_Widget::widget('Widget_Options');
     $enabled = $options->plugin('ADrawLottery')->ADrawLottery_enabled;
     $slug = $widget->slug; // 获取文章slug
 
-    // 如果 $lastResult 不为空，则表示之前已经添加过倒计时或中奖信息，直接返回原始内容
-    if (!empty($lastResult)) {
-        return $content;
-    }
-
+    // 如果 $lastResult 不为空，则表示之前已经添加过倒计
     if ($enabled == '1') {
         // 使用正则表达式匹配 <!--ADrawLottery start--> 和 <!--ADrawLottery end--> 标签之间的内容
         preg_match('/<!--ADrawLottery start-->(.*?)<!--ADrawLottery end-->/s', $content, $matches);
@@ -85,15 +81,11 @@ public static function addCountdownToContent($content, $widget, $lastResult)
     }
 
     return $content;
-}
-
-
-
-
-
+    }
     
-
-
+    
+    
+    
     
     
     private static function readWinnerFromLog($slug)
@@ -116,43 +108,54 @@ public static function addCountdownToContent($content, $widget, $lastResult)
     }
 
     
-    
-    
-    
-    public static function showCountdown()
+    private static function getADrawLotteryTime($slug)
     {
-        $class = Typecho_Widget::widget('Widget_Archive');
-        $ADrawLotteryTime = $class->fields->drawlottery_time;
+        // 获取文章自定义字段中的抽奖执行时间
+        $archive = Typecho_Widget::widget('Widget_Archive');
+        $fields = $archive->fields;
+        return $fields->drawlottery_time;
+    }
+    
+    
+    public static function showCountdown($slug)
+    {
+    $options = Typecho_Widget::widget('Widget_Options');
+    $class = Typecho_Widget::widget('Widget_Archive');
+    $ADrawLotteryTime = self::getADrawLotteryTime($slug);
 
-        // 获取当前时间戳和抽奖执行时间的时间戳
-        $currentTime = self::getBeijingTime();
-        $drawTime = strtotime($ADrawLotteryTime);
+    // 获取当前时间戳和抽奖执行时间的时间戳
+    $currentTime = self::getBeijingTime();
+    $drawTime = strtotime($ADrawLotteryTime);
 
-        // 计算倒计时剩余分钟数
-        $countdown = $drawTime - $currentTime;
-        // 计算剩余天数、小时数和分钟数
+    // 计算倒计时剩余秒数
+    $countdown = $drawTime - $currentTime;
+
+    // 如果倒计时小于等于0，则表示抽奖已经开始或结束
+    if ($countdown <= 0) {
+        // 倒计时结束，执行抽奖逻辑并显示中奖人名称、头像和评论内容
+        self::doADrawLottery();
+    } else {
+        // 计算剩余天数、小时数、分钟数和秒数
         $days = floor($countdown / (60 * 60 * 24));
         $hours = floor(($countdown - $days * 60 * 60 * 24) / (60 * 60));
-        $minutes = ceil(($countdown - $days * 60 * 60 * 24 - $hours * 60 * 60) / 60);
+        $minutes = floor(($countdown - $days * 60 * 60 * 24 - $hours * 60 * 60) / 60);
+        $seconds = $countdown - $days * 60 * 60 * 24 - $hours * 60 * 60 - $minutes * 60;
 
         // 显示倒计时
         echo '<div style="border: 1px solid #ccc; padding: 10px; background-color: #f2f2f2;">';
         if ($days > 0) {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $days . '天 ' . $hours . '小时 ' . $minutes . '分钟</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $days . '天 ' . $hours . '小时 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
         } elseif ($hours > 0) {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $hours . '小时 ' . $minutes . '分钟</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $hours . '小时 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
+        } elseif ($minutes > 0) {
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $minutes . '分钟 ' . $seconds . '秒</p>';
         } else {
-            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $minutes . '分钟</p>';
+            echo '<p style="font-size: 18px;">距离抽奖还有 ' . $seconds . '秒</p>';
         }
         echo '</div>';
-        
-         // 判断是否到达抽奖执行时间
-        if ($countdown <= 0) {
-            // 倒计时结束，执行抽奖逻辑并显示中奖人名称、头像和评论内容
-            self::doADrawLottery();
-        }
-    
     }
+    }
+
     private static function getBeijingTime()
     {
         // 设置时区为东八区
@@ -188,24 +191,29 @@ public static function addCountdownToContent($content, $widget, $lastResult)
     
     private static function doADrawLottery()
     {
+        
+        
         $options = Typecho_Widget::widget('Widget_Options');
         $bloggerEmail = $options->plugin('ADrawLottery')->ADrawLottery_blogger_email;
 
         // 获取文章的所有评论并按评论时间从早到晚排序
         $cid = Typecho_Widget::widget('Widget_Archive')->cid;
         $db = Typecho_Db::get();
-        $slug = Typecho_Widget::widget('Widget_Archive')->slug;
+        
+
+        
         $page = $db->fetchRow($db->select()->from('table.contents')
             ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.slug = ?', $slug));
+            ->where('table.contents.cid = ?', $cid));
         $comments = $db->fetchAll($db->select()->from('table.comments')
             ->where('table.comments.status = ?', 'approved')
             ->where('table.comments.created < ?', self::getBeijingTime())
             ->where('table.comments.type = ?', 'comment')
-            ->where('table.comments.cid <> ?', $page['authorId'])
-            ->where('table.comments.cid = ?', $cid)
+            ->where('table.comments.cid = ?', $cid) // 修改这一行
             ->order('table.comments.created', Typecho_Db::SORT_ASC));
 
+        
+        
         // 过滤博主评论
         foreach ($comments as $key => $comment) {
             if ($comment['mail'] == $bloggerEmail) {
@@ -216,29 +224,29 @@ public static function addCountdownToContent($content, $widget, $lastResult)
         // 随机选择一个楼层的评论显示中奖人名称、头像和评论内容
         $winner = null;
         if (!empty($comments)) {
-            $winner = $comments[array_rand($comments)];
+        $winner = $comments[array_rand($comments)];
         }
 
-        if ($winner) {
-            $author = $winner['author'];
-            $avatar = Typecho_Common::gravatarUrl($winner['mail'], 80, 'X', 'mm', Typecho_Widget::widget('Widget_Options')->siteUrl);
+    if ($winner) {
+        $author = $winner['author'];
+        $avatar = Typecho_Common::gravatarUrl($winner['mail'], 80, 'X', 'mm', Typecho_Widget::widget('Widget_Options')->siteUrl);
+        $content = $winner['text'];
+        echo '<div class="draw-lottery">';
+        echo '<p>恭喜中奖！</p>';
+        echo '<p>中奖人：' . $author . '</p>';
+        echo '<p>中奖人头像：<img src="' . $avatar . '" alt="' . $author . '"></p>';
+        echo '<p>中奖评论：' . $content . '</p>';
+        echo '</div>';
 
-            $content = $winner['text'];
-            echo '<div class="draw-lottery">';
-            echo '<p>恭喜中奖！</p>';
-            echo '<p>中奖人：' . $author . '</p>';
-            echo '<p>中奖人头像：<img src="' . $avatar . '" alt="' . $author . '"></p>';
-            echo '<p>中奖评论：' . $content . '</p>';
-            echo '</div>';
-            
-            
-            // 将中奖信息写入文件
-            $data = $slug . '##' . $author . '##' . $avatar . '##' . $content . PHP_EOL;
-            $file = __DIR__ . '/ADrawLottery_log.txt';
-            file_put_contents($file, $data, FILE_APPEND | LOCK_EX);
+        // 将中奖信息写入文件
+        $data = $cid . '##' . $author . '##' . $avatar . '##' . $content . PHP_EOL;
+        $file = __DIR__ . '/ADrawLottery_log.txt';
+        file_put_contents($file, $data, FILE_APPEND | LOCK_EX);
             
             
         }
+        
+
         
         
         
