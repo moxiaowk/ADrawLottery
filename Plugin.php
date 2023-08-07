@@ -198,12 +198,14 @@ class ADrawLottery_Plugin implements Typecho_Plugin_Interface
         $page = $db->fetchRow($db->select()->from('table.contents')
             ->where('table.contents.status = ?', 'publish')
             ->where('table.contents.cid = ?', $cid));
+        
         $comments = $db->fetchAll($db->select()->from('table.comments')
             ->where('table.comments.status = ?', 'approved')
             ->where('table.comments.created < ?', self::getBeijingTime())
             ->where('table.comments.type = ?', 'comment')
             ->where('table.comments.cid = ?', $cid)
-            ->order('table.comments.created', Typecho_Db::SORT_ASC));
+            ->order('table.comments.created', Typecho_Db::SORT_DESC) // 按评论时间倒序排序
+            ->group('table.comments.mail')); // 根据邮箱分组
 
         
         
